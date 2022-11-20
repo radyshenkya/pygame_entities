@@ -3,8 +3,8 @@ Classes for drawing sprites/sprites animations/etc
 """
 from typing import Tuple
 
-from game import Game
-from utils.vector import Vector2
+from pygame_entities.game import Game
+from pygame_entities.utils.vector import Vector2
 
 import pygame
 import pygame.math

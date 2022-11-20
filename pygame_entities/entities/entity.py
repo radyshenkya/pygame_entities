@@ -1,8 +1,5 @@
-from utils.drawable import DrawableSprite
-from utils.vector import Vector2
-from game import Game
-
-import pygame
+from pygame_entities.utils.vector import Vector2
+from pygame_entities.game import Game
 
 
 class Entity:

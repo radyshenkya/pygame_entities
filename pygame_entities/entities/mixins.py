@@ -1,8 +1,8 @@
 """
 Миксины для Entity класса, и все что от него наследуется. (С другими классами работать не будет, ибо основано на логике entity)
 """
-from utils.drawable import DrawableSprite
-from utils.vector import Vector2
+from pygame_entities.utils.drawable import DrawableSprite
+from pygame_entities.utils.vector import Vector2
 
 import pygame
 

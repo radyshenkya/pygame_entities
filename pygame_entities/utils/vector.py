@@ -1,7 +1,7 @@
 import math
 from typing import Union
 
-from utils.math import lerp
+from pygame_entities.utils.math import lerp
 
 
 class Vector2:
