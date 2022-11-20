@@ -73,7 +73,7 @@ class Game:
                 self.camera_follow_object.position
                 - Vector2(
                     self.screen_resolution[0] /
-                    2, self.screen_resolution / 2
+                    2, self.screen_resolution[1] / 2
                 ),
                 self.camera_follow_smooth_coefficient,
             )
