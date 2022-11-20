@@ -60,7 +60,7 @@ class Game:
 
             self.sprites.draw(self.screen)
             pygame.display.flip()
-            self.clock.tick(self.frame_rate)
+            self.delta_time = self.clock.tick(self.frame_rate) / 1000
 
     def update_entities(self):
         for _, entity in self.entities.items():
