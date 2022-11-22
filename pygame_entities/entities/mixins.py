@@ -9,25 +9,28 @@ from entities.entity import Entity
 import pygame
 
 
-class SpriteMixin:
+class SpriteMixin(Entity):
     """
     Миксин для отрисовки спрайтов.
     """
 
-    def sprite_init(self, sprite: BaseSprite) -> None:
+    def sprite_init(self, sprite: BaseSprite, sprite_position_offset=Vector2()) -> None:
+        self.sprite_offset = sprite_position_offset
         self.sprite = sprite
-        self.sprite.set_center_position(self.position.get_integer_tuple())
+        self.sprite.set_center_position(
+            (self.position + self.sprite_offset).get_integer_tuple())
         self.on_update.append(self.sprite_update_position)
         self.on_destroy.append(self.kill_sprite)
 
     def sprite_update_position(self, delta_time: float):
-        self.sprite.set_center_position(self.position.get_integer_tuple())
+        self.sprite.set_center_position(
+            (self.position + self.sprite_offset).get_integer_tuple())
 
     def kill_sprite(self):
         self.sprite.kill()
 
 
-class CollisionMixin:
+class CollisionMixin(Entity):
     """
     Миксин для считывания коллизий.
     Функции коллбеков добавляются в список self.on_collide_callbacks / self.on_trigger_callbacks. Функции вызываются с аргументот entity: Entity
@@ -76,7 +79,7 @@ class CollisionMixin:
                 self.on_collide(entity)
 
 
-class VelocityMovableMixin:
+class VelocityMixin(Entity):
     """
     Миксин для плавного движения с помощью вектора ускорения. (self.velocity)
     Для изменения скорости нужно изменять вектор self.velocity

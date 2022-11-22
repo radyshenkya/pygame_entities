@@ -21,7 +21,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
 
-        self.sprites = pygame.sprite.Group()
+        self.sprites = pygame.sprite.LayeredUpdates()
 
         self.delta_time = 1 / self.frame_rate
 

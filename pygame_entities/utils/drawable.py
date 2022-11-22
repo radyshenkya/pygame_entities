@@ -11,8 +11,10 @@ import pygame.math
 
 
 class BaseSprite(pygame.sprite.Sprite):
-    def __init__(self, image: pygame.Surface, start_position=(0, 0)) -> None:
+    def __init__(self, image: pygame.Surface, layer=0, start_position=(0, 0)) -> None:
         pygame.sprite.Sprite.__init__(self)
+        self._layer = layer
+
         self.original_image = image
 
         self.image = image
@@ -22,8 +24,6 @@ class BaseSprite(pygame.sprite.Sprite):
 
         # Transform vars
         self.rotation = 0.0
-        # self.flip_x = False
-        # self.flip_y = False
 
         # Registering sprite
         self.game.add_sprite(self)
@@ -48,8 +48,8 @@ class BaseSprite(pygame.sprite.Sprite):
 
 
 class SpriteWithCameraOffset(BaseSprite):
-    def __init__(self, image, start_position=(0, 0)) -> None:
-        super().__init__(image, start_position)
+    def __init__(self, image, layer=0, start_position=(0, 0)) -> None:
+        super().__init__(image, layer, start_position)
 
         self.base_position = start_position
 
@@ -66,8 +66,8 @@ class SpriteWithCameraOffset(BaseSprite):
 
 
 class AnimatedSprite(BaseSprite):
-    def __init__(self, frames: List[pygame.Surface], frame_change_delay: float, start_position=(0, 0)) -> None:
-        super().__init__(frames[0], start_position)
+    def __init__(self, frames: List[pygame.Surface], frame_change_delay: float, layer=0, start_position=(0, 0)) -> None:
+        super().__init__(frames[0], layer, start_position)
 
         self.frames = frames
         self.current_frame_index = 0
@@ -93,8 +93,8 @@ class AnimatedSprite(BaseSprite):
 
 
 class AnimatedSpriteWithCameraOffset(AnimatedSprite):
-    def __init__(self, frames: List[pygame.Surface], frame_change_delay: float, start_position=(0, 0)) -> None:
-        super().__init__(frames, frame_change_delay, start_position)
+    def __init__(self, frames: List[pygame.Surface], frame_change_delay: float, layer=0, start_position=(0, 0)) -> None:
+        super().__init__(frames, frame_change_delay, layer, start_position)
 
         self.base_position = start_position
 
