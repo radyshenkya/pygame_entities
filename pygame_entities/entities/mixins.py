@@ -1,8 +1,10 @@
 """
-Миксины для Entity класса, и все что от него наследуется. (С другими классами работать не будет, ибо основано на логике entity)
+Mixins for entities (Based on Entity class)
 """
-from pygame_entities.utils.drawable import DrawableSprite
-from pygame_entities.utils.vector import Vector2
+from utils.drawable import BaseSprite
+from utils.vector import Vector2
+
+from entities.entity import Entity
 
 import pygame
 
@@ -12,8 +14,8 @@ class SpriteMixin:
     Миксин для отрисовки спрайтов.
     """
 
-    def sprite_init(self, drawable_sprite: DrawableSprite) -> None:
-        self.sprite = drawable_sprite
+    def sprite_init(self, sprite: BaseSprite) -> None:
+        self.sprite = sprite
         self.sprite.set_center_position(self.position.get_integer_tuple())
         self.on_update.append(self.sprite_update_position)
         self.on_destroy.append(self.kill_sprite)

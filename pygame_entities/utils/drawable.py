@@ -1,22 +1,29 @@
 """
-Classes for drawing sprites/sprites animations/etc
+Classes for drawing sprites/sprite animations/etc
 """
-from typing import Tuple
+from typing import List, Tuple
 
-from pygame_entities.game import Game
-from pygame_entities.utils.vector import Vector2
+from game import Game
+from utils.vector import Vector2
 
 import pygame
 import pygame.math
 
 
-class DrawableSprite(pygame.sprite.Sprite):
-    def __init__(self, image, start_position=(0, 0)) -> None:
+class BaseSprite(pygame.sprite.Sprite):
+    def __init__(self, image: pygame.Surface, start_position=(0, 0)) -> None:
         pygame.sprite.Sprite.__init__(self)
+        self.original_image = image
+
         self.image = image
         self.rect = self.image.get_rect()
         self.rect.center = start_position
         self.game = Game.get_instance()
+
+        # Transform vars
+        self.rotation = 0.0
+        # self.flip_x = False
+        # self.flip_y = False
 
         # Registering sprite
         self.game.add_sprite(self)
@@ -24,10 +31,70 @@ class DrawableSprite(pygame.sprite.Sprite):
     def set_center_position(self, position: Tuple[int, int]):
         self.rect.center = position
 
+    def set_rotation(self, new_rotation: float):
+        self.rotation = new_rotation
+        self.image = pygame.transform.rotate(self.original_image, new_rotation)
 
-class CameraOffsetDrawableSprite(DrawableSprite):
+    def get_rotation(self) -> float:
+        return self.rotation
+
+    def reset_image_to_original(self):
+        self.image = self.original_image
+
+    def update_image_transformation(self):
+        self.reset_image_to_original()
+
+        self.image = pygame.transform.rotate(self.image, self.rotation)
+
+
+class SpriteWithCameraOffset(BaseSprite):
     def __init__(self, image, start_position=(0, 0)) -> None:
         super().__init__(image, start_position)
+
+        self.base_position = start_position
+
+    def update(self) -> None:
+        super().update()
+
+        self.rect.center = (
+            Vector2(self.base_position[0], self.base_position[1])
+            - self.game.camera_position
+        ).get_integer_tuple()
+
+    def set_center_position(self, position: Tuple[int, int]):
+        self.base_position = position
+
+
+class AnimatedSprite(BaseSprite):
+    def __init__(self, frames: List[pygame.Surface], frame_change_delay: float, start_position=(0, 0)) -> None:
+        super().__init__(frames[0], start_position)
+
+        self.frames = frames
+        self.current_frame_index = 0
+        self.frames_count = len(frames)
+        self.frame_delay = frame_change_delay
+        self.timer = 0.0
+
+    def update(self) -> None:
+        super().update()
+
+        self.timer += self.game.delta_time
+
+        if self.timer >= self.frame_delay:
+            self.timer = 0.0
+            self.current_frame_index = (
+                self.current_frame_index + 1) % self.frames_count
+
+            self.original_image = self.frames[self.current_frame_index]
+            self.update_image_transformation()
+
+    def set_frame_change_delat(self, new_delay: float) -> None:
+        self.frame_delay = new_delay
+
+
+class AnimatedSpriteWithCameraOffset(AnimatedSprite):
+    def __init__(self, frames: List[pygame.Surface], frame_change_delay: float, start_position=(0, 0)) -> None:
+        super().__init__(frames, frame_change_delay, start_position)
 
         self.base_position = start_position
 
