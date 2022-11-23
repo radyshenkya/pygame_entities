@@ -46,6 +46,12 @@ class BaseSprite(pygame.sprite.Sprite):
 
         self.image = pygame.transform.rotate(self.image, self.rotation)
 
+    def get_layer(self):
+        return self._layer
+
+    def set_layer(self, value):
+        self.game.sprites.change_layer(self, value)
+
 
 class SpriteWithCameraOffset(BaseSprite):
     def __init__(self, image, layer=0, start_position=(0, 0)) -> None:
