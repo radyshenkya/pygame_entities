@@ -41,6 +41,12 @@ class Game:
 
         return Game._instance
 
+    def set_framerate(self, new_framerate: int):
+        self.frame_rate = new_framerate
+
+    def set_screen(self, screen: pygame.Surface):
+        self.screen = screen
+
     def run(self):
         while self.running:
             self.screen.fill(self.void_color)
@@ -72,8 +78,8 @@ class Game:
                 self.camera_position,
                 self.camera_follow_object.position
                 - Vector2(
-                    self.screen_resolution[0] /
-                    2, self.screen_resolution[1] / 2
+                    self.screen.get_width() /
+                    2, self.screen.get_height() / 2
                 ),
                 self.camera_follow_smooth_coefficient,
             )
