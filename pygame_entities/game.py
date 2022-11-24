@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from utils.vector import Vector2
+from pygame_entities.utils.vector import Vector2
 
 import pygame
 
@@ -83,6 +83,12 @@ class Game:
                 ),
                 self.camera_follow_smooth_coefficient,
             )
+
+    def get_camera_center_position(self) -> Vector2:
+        return self.camera_position + Vector2(
+            self.screen.get_width() /
+            2, self.screen.get_height() / 2
+        )
 
     def add_sprite(self, sprite: pygame.sprite.Sprite):
         self.sprites.add(sprite)
