@@ -3,8 +3,8 @@ Classes for drawing sprites/sprite animations/etc
 """
 from typing import List, Tuple
 
-from pygame_entities.game import Game
-from pygame_entities.utils.vector import Vector2
+from game import Game
+from utils.vector import Vector2
 
 import pygame
 import pygame.math
@@ -69,6 +69,33 @@ class SpriteWithCameraOffset(BaseSprite):
 
     def set_center_position(self, position: Tuple[int, int]):
         self.base_position = position
+
+
+class FontSprite(BaseSprite):
+    def __init__(self, text: str, color: Tuple[int, int, int], font: pygame.font.Font, layer=0, start_position=(0, 0)) -> None:
+        super().__init__(pygame.Surface((0, 0)), layer, start_position)
+        self.font = font
+
+        self.set_text(text, color)
+
+    def set_text(self, new_text: str, new_color: Tuple[int, int, int]):
+        # Getting size of surface
+        text_size = self.font.size(new_text)
+
+        # Creating new surface
+        new_text_surface = pygame.Surface(text_size, pygame.SRCALPHA)
+        new_text_surface.blit(self.font.render(
+            new_text, 0, new_color), (0, 0))
+
+        self.image = new_text_surface
+
+    def set_font(self, new_font: pygame.font.Font):
+        self.font = new_font
+
+
+class FontSpriteWithCameraOffset(FontSprite, SpriteWithCameraOffset):
+    def __init__(self, text: str, color: Tuple[int, int, int], font: pygame.font.Font, layer=0, start_position=(0, 0)) -> None:
+        super().__init__(text, color, font, layer, start_position)
 
 
 class AnimatedSprite(BaseSprite):

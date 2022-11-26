@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from pygame_entities.utils.vector import Vector2
+from utils.vector import Vector2
 
 import pygame
 

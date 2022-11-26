@@ -1,10 +1,10 @@
 """
 Mixins for entities (Based on Entity class)
 """
-from pygame_entities.utils.drawable import BaseSprite
-from pygame_entities.utils.vector import Vector2
+from utils.drawable import BaseSprite
+from utils.vector import Vector2
 
-from pygame_entities.entities.entity import Entity
+from entities.entity import Entity
 
 import pygame
 
