@@ -21,6 +21,7 @@ class BaseSprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = start_position
         self.game = Game.get_instance()
+        self.visibility = True
 
         # Transform vars
         self.rotation = 0.0
@@ -51,6 +52,24 @@ class BaseSprite(pygame.sprite.Sprite):
 
     def set_layer(self, value):
         self.game.sprites.change_layer(self, value)
+
+    def set_visible(self, is_visible: bool):
+        if is_visible:
+            self.show()
+        else:
+            self.hide()
+
+    def hide(self):
+        if not self.visibility:
+            return
+        self.visibility = False
+        self.kill()
+
+    def show(self):
+        if self.visibility:
+            return
+        self.visibility = True
+        self.game.add_sprite(self)
 
 
 class SpriteWithCameraOffset(BaseSprite):
