@@ -152,8 +152,3 @@ class AnimatedSpriteWithCameraOffset(AnimatedSprite, SpriteWithCameraOffset):
 
     def update(self) -> None:
         super().update()
-
-        # self.rect.center = (
-        #     Vector2(self.base_position[0], self.base_position[1])
-        #     - self.game.camera_position
-        # ).get_integer_tuple()
