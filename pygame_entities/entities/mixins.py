@@ -3,6 +3,7 @@ Mixins for entities (Based on Entity class)
 """
 from utils.drawable import BaseSprite
 from utils.math import Vector2
+from utils.collision_side import check_side, UP, DOWN, RIGHT, LEFT
 
 from entities.entity import Entity
 
@@ -46,13 +47,13 @@ class CollisionMixin(Entity):
         self.on_collide_callbacks = list()
         self.on_trigger_callbacks = list()
 
-    def on_collide(self, entity):
+    def on_collide(self, entity, self_collider_rect: pygame.Rect, other_collider_rect: pygame.Rect):
         for method in self.on_collide_callbacks:
-            method(entity)
+            method(entity, self_collider_rect, other_collider_rect)
 
-    def on_trigger(self, entity):
+    def on_trigger(self, entity, self_collider_rect: pygame.Rect, other_collider_rect: pygame.Rect):
         for method in self.on_trigger_callbacks:
-            method(entity)
+            method(entity, self_collider_rect, other_collider_rect)
 
     def check_collisions(self, delta_time: float):
         if not self.is_check_collision:
@@ -74,9 +75,11 @@ class CollisionMixin(Entity):
 
             if self_collider_rect.colliderect(other_collider_rect):
                 if entity.is_trigger or self.is_trigger:
-                    self.on_trigger(entity)
+                    self.on_trigger(entity, self_collider_rect,
+                                    other_collider_rect)
                     continue
-                self.on_collide(entity)
+                self.on_collide(entity, self_collider_rect,
+                                other_collider_rect)
 
 
 class VelocityMixin(Entity):
@@ -102,15 +105,27 @@ class VelocityMixin(Entity):
             )
 
 
-class VelocityWithCollisionMixin(VelocityMixin, CollisionMixin):
+class BlockingCollisionMixin(CollisionMixin):
     """
     Миксин, основанный на VelocityMixin CollisionMixin, при столкновении с каким-либо коллайдером возвращает сущность назад по velocity.
     """
 
-    def velocity_with_collision_init(self, collider_size: Vector2, is_trigger=False, is_kinematic=True, velocity_regress_strength=0.0):
-        self.collision_init(collider_size, is_trigger, True)
+    def collision_init(self, collider_size: Vector2, is_trigger=False):
+        super().collision_init(collider_size, is_trigger, True)
         self.on_collide_callbacks.append(self.move_back_on_colliding)
-        self.velocity_init(is_kinematic, velocity_regress_strength)
 
-    def move_back_on_colliding(self, entity: CollisionMixin):
-        pass
+    def move_back_on_colliding(self, entity: CollisionMixin, self_collider: pygame.Rect, other_collider: pygame.Rect):
+        side = check_side(self_collider, other_collider)
+
+        if side == UP:
+            self_new_y = other_collider.top - (self_collider.height / 2)
+            self.position = Vector2(self.position.x, self_new_y)
+        elif side == DOWN:
+            self_new_y = other_collider.bottom + (self_collider.height / 2)
+            self.position = Vector2(self.position.x, self_new_y)
+        elif side == RIGHT:
+            self_new_x = other_collider.right + (self_collider.width / 2)
+            self.position = Vector2(self_new_x, self.position.y)
+        else:
+            self_new_x = other_collider.left - (self_collider.width / 2)
+            self.position = Vector2(self_new_x, self.position.y)
