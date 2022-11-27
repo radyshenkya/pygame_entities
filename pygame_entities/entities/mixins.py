@@ -2,7 +2,7 @@
 Mixins for entities (Based on Entity class)
 """
 from utils.drawable import BaseSprite
-from utils.vector import Vector2
+from utils.math import Vector2
 
 from entities.entity import Entity
 
@@ -100,3 +100,17 @@ class VelocityMixin(Entity):
             self.velocity = Vector2.lerp(
                 self.velocity, Vector2(0, 0), self.velocity_regress_strength
             )
+
+
+class VelocityWithCollisionMixin(VelocityMixin, CollisionMixin):
+    """
+    Миксин, основанный на VelocityMixin CollisionMixin, при столкновении с каким-либо коллайдером возвращает сущность назад по velocity.
+    """
+
+    def velocity_with_collision_init(self, collider_size: Vector2, is_trigger=False, is_kinematic=True, velocity_regress_strength=0.0):
+        self.collision_init(collider_size, is_trigger, True)
+        self.on_collide_callbacks.append(self.move_back_on_colliding)
+        self.velocity_init(is_kinematic, velocity_regress_strength)
+
+    def move_back_on_colliding(self, entity: CollisionMixin):
+        pass

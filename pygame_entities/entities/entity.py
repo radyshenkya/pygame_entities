@@ -1,4 +1,4 @@
-from utils.vector import Vector2
+from utils.math import Vector2
 from game import Game
 
 

@@ -4,7 +4,7 @@ Classes for drawing sprites/sprite animations/etc
 from typing import List, Tuple
 
 from game import Game
-from utils.vector import Vector2
+from utils.math import Vector2
 
 import pygame
 import pygame.math
