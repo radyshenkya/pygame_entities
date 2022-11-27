@@ -144,7 +144,7 @@ class AnimatedSprite(BaseSprite):
         self.frame_delay = new_delay
 
 
-class AnimatedSpriteWithCameraOffset(AnimatedSprite):
+class AnimatedSpriteWithCameraOffset(AnimatedSprite, SpriteWithCameraOffset):
     def __init__(self, frames: List[pygame.Surface], frame_change_delay: float, layer=0, start_position=(0, 0)) -> None:
         super().__init__(frames, frame_change_delay, layer, start_position)
 
@@ -153,10 +153,7 @@ class AnimatedSpriteWithCameraOffset(AnimatedSprite):
     def update(self) -> None:
         super().update()
 
-        self.rect.center = (
-            Vector2(self.base_position[0], self.base_position[1])
-            - self.game.camera_position
-        ).get_integer_tuple()
-
-    def set_center_position(self, position: Tuple[int, int]):
-        self.base_position = position
+        # self.rect.center = (
+        #     Vector2(self.base_position[0], self.base_position[1])
+        #     - self.game.camera_position
+        # ).get_integer_tuple()
