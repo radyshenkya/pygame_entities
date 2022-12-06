@@ -140,7 +140,7 @@ class AnimatedSprite(BaseSprite):
             self.original_image = self.frames[self.current_frame_index]
             self.update_image_transformation()
 
-    def set_frame_change_delat(self, new_delay: float) -> None:
+    def set_frame_change_delay(self, new_delay: float) -> None:
         self.frame_delay = new_delay
 
 
