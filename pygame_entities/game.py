@@ -28,7 +28,8 @@ class Game:
         # Using dict, because with dict we can remove entities from game in O(1) time
         self.entity_counter = 0
         self.entities_for_delete = list()
-        self.entities = dict()
+        self.enabled_entities = dict()
+        self.disabled_entities = dict()
 
         # For camera
         self.camera_follow_smooth_coefficient = 0.1
@@ -69,7 +70,7 @@ class Game:
             self.delta_time = self.clock.tick(self.frame_rate) / 1000
 
     def update_entities(self):
-        for _, entity in self.entities.items():
+        for _, entity in self.enabled_entities.items():
             entity.update(self.delta_time)
 
     def camera_follow(self):
@@ -94,9 +95,19 @@ class Game:
         self.sprites.add(sprite)
 
     def add_entity(self, entity):
-        self.entities[self.entity_counter] = entity
+        self.enabled_entities[self.entity_counter] = entity
         entity.id = self.entity_counter
         self.entity_counter += 1
+
+    def disable_entity(self, entity):
+        if entity.id in self.enabled_entities.keys():
+            self.disabled_entities[entity.id] = self.enabled_entities[entity.id]
+            del self.enabled_entities[entity.id]
+
+    def enable_entity(self, entity):
+        if entity.id in self.disabled_entities.keys():
+            self.enabled_entities[entity.id] = self.disabled_entities[entity.id]
+            del self.disabled_entities[entity.id]
 
     def delete_entity(self, entity_id: int):
         if entity_id not in self.entities_for_delete:
@@ -104,6 +115,6 @@ class Game:
 
     def delete_entities(self):
         for entity_id in self.entities_for_delete:
-            del self.entities[entity_id]
+            del self.enabled_entities[entity_id]
 
         self.entities_for_delete = list()

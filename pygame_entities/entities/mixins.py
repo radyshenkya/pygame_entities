@@ -59,7 +59,7 @@ class CollisionMixin(Entity):
         if not self.is_check_collision:
             return
 
-        for entity in self.game.entities.values():
+        for entity in self.game.enabled_entities.values():
             if not isinstance(entity, CollisionMixin) or entity.id == self.id:
                 continue
 

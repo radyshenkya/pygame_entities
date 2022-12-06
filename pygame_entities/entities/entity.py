@@ -13,6 +13,7 @@ class Entity:
         self.id = 0
         self.game = Game.get_instance()
         self.game.add_entity(self)
+        self.enabled = True
 
     def update(self, delta_time: float):
         for method in self.on_update:
@@ -22,3 +23,17 @@ class Entity:
         for method in self.on_destroy:
             method()
         Game.get_instance().delete_entity(self.id)
+
+    def enable(self):
+        self.game.enable_entity(self)
+        self.enabled = True
+
+    def disable(self):
+        self.game.disable_entity(self)
+        self.enabled = False
+
+    def set_enabled(self, is_enabled: bool):
+        if is_enabled and not self.enabled:
+            self.enable()
+        elif not is_enabled and self.enabled:
+            self.disable()
