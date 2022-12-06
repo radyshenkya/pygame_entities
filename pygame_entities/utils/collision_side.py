@@ -20,6 +20,11 @@ def check_side_y(a: Rect, b: Rect) -> int:
 
 
 def check_side(a: Rect, b: Rect) -> int:
+    width_ratio = (a.height + b.height) / (a.width + b.width)
+
+    a.center = (a.center[0] * width_ratio, a.center[1])
+    b.center = (b.center[0] * width_ratio, b.center[1])
+
     if abs(a.center[0] - b.center[0]) > abs(a.center[1] - b.center[1]):
         return check_side_x(a, b)
     return check_side_y(a, b)
