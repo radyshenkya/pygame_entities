@@ -63,15 +63,9 @@ class CollisionMixin(Entity):
             if not isinstance(entity, CollisionMixin) or entity.id == self.id:
                 continue
 
-            self_collider_rect = pygame.Rect(
-                (self.position - self.collider_size / 2).get_integer_tuple(),
-                self.collider_size.get_integer_tuple(),
-            )
+            self_collider_rect = self.get_collider_rect()
 
-            other_collider_rect = pygame.Rect(
-                (entity.position - entity.collider_size / 2).get_integer_tuple(),
-                entity.collider_size.get_integer_tuple(),
-            )
+            other_collider_rect = entity.get_collider_rect()
 
             if self_collider_rect.colliderect(other_collider_rect):
                 if entity.is_trigger or self.is_trigger:
@@ -80,6 +74,12 @@ class CollisionMixin(Entity):
                     continue
                 self.on_collide(entity, self_collider_rect,
                                 other_collider_rect)
+
+    def get_collider_rect(self) -> pygame.Rect:
+        return pygame.Rect(
+            (self.position - self.collider_size / 2).get_integer_tuple(),
+            self.collider_size.get_integer_tuple(),
+        )
 
 
 class VelocityMixin(Entity):
@@ -129,3 +129,37 @@ class BlockingCollisionMixin(CollisionMixin):
         else:
             self_new_x = other_collider.left - (self_collider.width / 2)
             self.position = Vector2(self_new_x, self.position.y)
+
+
+class MouseEventMixin(CollisionMixin):
+    """
+    Миксин для обработки нажатий на коллайдер сущности.
+    Основан на CollisionMixin. Перед инициализацией этого миксина нужно вызвать self.collision_init(...)
+
+    Добавляет коллбеки:
+    on_mouse_down(mouse_button) - при нажатии кнопки над коллайдером
+    on_mouse_up(mouse_button) - при отпускании кнопки над коллайдером
+    on_mouse_motion - при движении мыши над коллайдером
+    """
+
+    def mouse_events_init(self):
+        self.on_mouse_down = list()
+        self.on_mouse_up = list()
+        self.on_mouse_motion = list()
+        self.on_update.append(self.mouse_events)
+
+    def mouse_events(self, _):
+        # Checking, is mouse pointer is over object
+        mouse_world_position = self.game.from_screen_to_world_point(
+            Vector2.from_tuple(pygame.mouse.get_pos()))
+
+        if not self.get_collider_rect().collidepoint(mouse_world_position.get_tuple()):
+            return
+
+        for event in self.game.get_events():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                [f(event.button) for f in self.on_mouse_down]
+            elif event.type == pygame.MOUSEBUTTONUP:
+                [f(event.button) for f in self.on_mouse_up]
+            elif event.type == pygame.MOUSEMOTION:
+                [f() for f in self.on_mouse_motion]
