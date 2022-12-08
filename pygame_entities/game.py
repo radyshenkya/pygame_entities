@@ -129,3 +129,9 @@ class Game:
             del self.enabled_entities[entity_id]
 
         self.entities_for_delete = list()
+
+    def from_screen_to_world_point(self, on_screen_point: Vector2) -> Vector2:
+        return on_screen_point + self.camera_position
+
+    def from_world_point_to_screen(self, world_point: Vector2) -> Vector2:
+        return world_point - self.camera_position

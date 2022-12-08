@@ -146,9 +146,11 @@ class MouseEventMixin(CollisionMixin):
         self.on_mouse_down = list()
         self.on_mouse_up = list()
         self.on_mouse_motion = list()
-        self.on_update.append(self.mouse_events)
+        self.game.subsribe_for_event(self.mouse_events, pygame.MOUSEBUTTONDOWN)
+        self.game.subsribe_for_event(self.mouse_events, pygame.MOUSEBUTTONUP)
+        self.game.subsribe_for_event(self.mouse_events, pygame.MOUSEMOTION)
 
-    def mouse_events(self, _):
+    def mouse_events(self, event: pygame.event.Event):
         # Checking, is mouse pointer is over object
         mouse_world_position = self.game.from_screen_to_world_point(
             Vector2.from_tuple(pygame.mouse.get_pos()))
@@ -156,10 +158,9 @@ class MouseEventMixin(CollisionMixin):
         if not self.get_collider_rect().collidepoint(mouse_world_position.get_tuple()):
             return
 
-        for event in self.game.get_events():
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                [f(event.button) for f in self.on_mouse_down]
-            elif event.type == pygame.MOUSEBUTTONUP:
-                [f(event.button) for f in self.on_mouse_up]
-            elif event.type == pygame.MOUSEMOTION:
-                [f() for f in self.on_mouse_motion]
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            [f(event.button) for f in self.on_mouse_down]
+        elif event.type == pygame.MOUSEBUTTONUP:
+            [f(event.button) for f in self.on_mouse_up]
+        elif event.type == pygame.MOUSEMOTION:
+            [f() for f in self.on_mouse_motion]
