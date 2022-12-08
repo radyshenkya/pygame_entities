@@ -1,4 +1,5 @@
-from typing import Tuple
+from types import FunctionType, MethodType
+from typing import Any, Dict, List, Tuple, Union
 
 from utils.math import Vector2
 
@@ -36,11 +37,24 @@ class Game:
         self.camera_position = Vector2(0, 0)
         self.camera_follow_object = None
 
+        # for event system
+        self.subscribed_events: Dict[int, List[FunctionType]] = dict()
+
     def get_instance(screen_resolution=(0, 0), frame_rate=60) -> "Game":
         if Game._instance is None:
             Game._instance = Game(screen_resolution, frame_rate)
 
         return Game._instance
+
+    def update_events(self):
+        for event in pygame.event.get():
+            for func in self.subscribed_events.get(event.type, []):
+                func(event)
+
+    def subsribe_for_event(self, function: Union[MethodType, FunctionType], event_type: int):
+        subscribers = self.subscribed_events.get(event_type, [])
+        subscribers.append(function)
+        self.subscribed_events[event_type] = subscribers
 
     def set_framerate(self, new_framerate: int):
         self.frame_rate = new_framerate
@@ -52,10 +66,7 @@ class Game:
         while self.running:
             self.screen.fill(self.void_color)
 
-            # Chechking for exit
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
+            self.update_events()
 
             self.update_entities()
 
