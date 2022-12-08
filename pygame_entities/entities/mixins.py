@@ -1,6 +1,8 @@
 """
 Mixins for entities (Based on Entity class)
 """
+from types import FunctionType, MethodType
+from typing import Union
 from utils.drawable import BaseSprite
 from utils.math import Vector2
 from utils.collision_side import check_side, UP, DOWN, RIGHT, LEFT
@@ -12,70 +14,130 @@ import pygame
 
 class SpriteMixin(Entity):
     """
-    Миксин для отрисовки спрайтов.
+    Sprite render mixin
+
+    Need to run sprite_init method for initialization
     """
 
     def sprite_init(self, sprite: BaseSprite, sprite_position_offset=Vector2()) -> None:
+        """
+        Initializating this mixin.
+
+        Automatically adding sprite in game
+        """
         self.sprite_offset = sprite_position_offset
         self.sprite = sprite
-        self.sprite.set_center_position(
-            (self.position + self.sprite_offset).get_integer_tuple())
-        self.on_update.append(self.sprite_update_position)
-        self.on_destroy.append(self.kill_sprite)
+        self.sprite.center_position = (
+            self.position + self.sprite_offset).get_integer_tuple()
+        self.subscribe_on_update(self.sprite_update_position)
+        self.subscribe_on_destroy(self.kill_sprite)
 
     def sprite_update_position(self, delta_time: float):
-        self.sprite.set_center_position(
-            (self.position + self.sprite_offset).get_integer_tuple())
+        """
+        Runned every frame.
+
+        Changing position of sprite.
+        """
+        self.sprite.center_position = (
+            self.position + self.sprite_offset).get_integer_tuple()
 
     def kill_sprite(self):
+        """
+        Runned on destroy of entity.
+
+        Deleting sprite from game
+        """
         self.sprite.kill()
 
 
 class CollisionMixin(Entity):
     """
-    Миксин для считывания коллизий.
-    Функции коллбеков добавляются в список self.on_collide_callbacks / self.on_trigger_callbacks. Функции вызываются с аргументот entity: Entity
+    Mixin for collision callbacks
+
+    Need to run collision_init method for initialization
     """
 
     def collision_init(
         self, collider_size: Vector2, is_trigger=False, is_check_collision=False
     ):
-        self.collider_size = collider_size
-        self.is_trigger = is_trigger
-        self.on_update.append(self.check_collisions)
-        self.is_check_collision = is_check_collision
+        """
+        Initializing this mixin.
+
+        If is_check_collisions=False subscribed functions on_collide and on_trigger will not be called.
+
+        It is used for optimization.
+        """
+        self.collider_size: Vector2 = collider_size
+        self.is_trigger: bool = is_trigger
+        self.subscribe_on_update(self._check_collisions)
+        self.is_check_collision: bool = is_check_collision
         self.on_collide_callbacks = list()
         self.on_trigger_callbacks = list()
 
-    def on_collide(self, entity, self_collider_rect: pygame.Rect, other_collider_rect: pygame.Rect):
+    def subscribe_on_collide(self, function: Union[FunctionType, MethodType]):
+        """
+        Subscribes function for collisions.
+
+        Subscribed function will be called every frame when colliding with another collider.
+
+        Function will be called with entity argument like that: function(entity: CollisionMixin)
+        """
+        self.on_collide_callbacks.append(function)
+
+    def subscribe_on_trigger(self, function: Union[FunctionType, MethodType]):
+        """
+        Subscribes function for collisions with triggers.
+
+        Subscribed function will be called every frame when colliding with another collider.
+
+        Function will be called with entity argument like that: function(entity: CollisionMixin)
+        """
+        self.on_trigger_callbacks.append(function)
+
+    def _on_collide(self, entity, self_collider_rect: pygame.Rect, other_collider_rect: pygame.Rect):
+        """
+        Calls all subscribed functions for collisions
+        """
         for method in self.on_collide_callbacks:
             method(entity, self_collider_rect, other_collider_rect)
 
-    def on_trigger(self, entity, self_collider_rect: pygame.Rect, other_collider_rect: pygame.Rect):
+    def _on_trigger(self, entity, self_collider_rect: pygame.Rect, other_collider_rect: pygame.Rect):
+        """
+        Calls all subscribed functions for collisions with trigger
+        """
         for method in self.on_trigger_callbacks:
             method(entity, self_collider_rect, other_collider_rect)
 
-    def check_collisions(self, delta_time: float):
+    def _check_collisions(self, _):
+        """
+        Runned every frame.
+
+        Checks collisions
+        """
         if not self.is_check_collision:
             return
 
-        for entity in self.game.enabled_entities.values():
+        for entity in self.game.enabled_entities:
             if not isinstance(entity, CollisionMixin) or entity.id == self.id:
                 continue
 
-            self_collider_rect = self.get_collider_rect()
+            self_collider_rect = self.collider_rect
 
-            other_collider_rect = entity.get_collider_rect()
+            other_collider_rect = entity.collider_rect
 
             if self_collider_rect.colliderect(other_collider_rect):
                 if entity.is_trigger or self.is_trigger:
-                    self.on_trigger(entity, self_collider_rect,
-                                    other_collider_rect)
+                    self._on_trigger(entity, self_collider_rect,
+                                     other_collider_rect)
                     continue
-                self.on_collide(entity, self_collider_rect,
-                                other_collider_rect)
+                self._on_collide(entity, self_collider_rect,
+                                 other_collider_rect)
 
-    def get_collider_rect(self) -> pygame.Rect:
+    @property
+    def collider_rect(self) -> pygame.Rect:
+        """
+        Returning pygame.Rect of this collider.
+        """
         return pygame.Rect(
             (self.position - self.collider_size / 2).get_integer_tuple(),
             self.collider_size.get_integer_tuple(),
@@ -84,19 +146,30 @@ class CollisionMixin(Entity):
 
 class VelocityMixin(Entity):
     """
-    Миксин для плавного движения с помощью вектора ускорения. (self.velocity)
-    Для изменения скорости нужно изменять вектор self.velocity
+    Mixin for smooth moving of entity
+
+    Change self.velocity for moving
     """
 
     def velocity_init(self, is_kinematic=True, velocity_regress_strength=0.0):
-        self.is_kinematic = is_kinematic
+        """
+        Initializing this mixin.
 
-        self.velocity_regress_strength = velocity_regress_strength
-        self.velocity = Vector2(0, 0)
+        velocity_redress_strength used for smooth changing velocity to Vector(0, 0)
+        """
+        self.is_kinematic: bool = is_kinematic
 
-        self.on_update.append(self.update_velocity_and_pos)
+        self.velocity_regress_strength: float = velocity_regress_strength
+        self.velocity: Vector2 = Vector2(0, 0)
 
-    def update_velocity_and_pos(self, delta_time: float):
+        self.subscribe_on_update(self._update_velocity_and_pos)
+
+    def _update_velocity_and_pos(self, _):
+        """
+        Called every frame.
+
+        Changing position of entity
+        """
         self.position += self.velocity
 
         if not self.is_kinematic:
@@ -107,14 +180,21 @@ class VelocityMixin(Entity):
 
 class BlockingCollisionMixin(CollisionMixin):
     """
-    Миксин, основанный на VelocityMixin CollisionMixin, при столкновении с каким-либо коллайдером возвращает сущность назад по velocity.
+    Blocking position of entity in another colliders.
+
+    Based on CollisiongMixin
     """
 
     def collision_init(self, collider_size: Vector2, is_trigger=False):
         super().collision_init(collider_size, is_trigger, True)
-        self.on_collide_callbacks.append(self.move_back_on_colliding)
+        self.subscribe_on_collide(self._move_back_on_colliding)
 
-    def move_back_on_colliding(self, entity: CollisionMixin, self_collider: pygame.Rect, other_collider: pygame.Rect):
+    def _move_back_on_colliding(self, _, self_collider: pygame.Rect, other_collider: pygame.Rect):
+        """
+        Runned every frame.
+
+        Moving back entity from another collider.
+        """
         side = check_side(self_collider, other_collider)
 
         if side == UP:
@@ -133,34 +213,65 @@ class BlockingCollisionMixin(CollisionMixin):
 
 class MouseEventMixin(CollisionMixin):
     """
-    Миксин для обработки нажатий на коллайдер сущности.
-    Основан на CollisionMixin. Перед инициализацией этого миксина нужно вызвать self.collision_init(...)
+    Mixin for handling clicks / hovering above this entity.
 
-    Добавляет коллбеки:
-    on_mouse_down(mouse_button) - при нажатии кнопки над коллайдером
-    on_mouse_up(mouse_button) - при отпускании кнопки над коллайдером
-    on_mouse_motion - при движении мыши над коллайдером
+    Based on CollisionMixin.
+
+    WARNING: Needs to be initialized after collision_init method.
     """
 
     def mouse_events_init(self):
-        self.on_mouse_down = list()
-        self.on_mouse_up = list()
-        self.on_mouse_motion = list()
-        self.game.subsribe_for_event(self.mouse_events, pygame.MOUSEBUTTONDOWN)
-        self.game.subsribe_for_event(self.mouse_events, pygame.MOUSEBUTTONUP)
-        self.game.subsribe_for_event(self.mouse_events, pygame.MOUSEMOTION)
+        """
+        Initializing this mixin
+        """
+        self._on_mouse_down = list()
+        self._on_mouse_up = list()
+        self._on_mouse_motion = list()
+        self.game.subsribe_for_event(
+            self._mouse_events, pygame.MOUSEBUTTONDOWN)
+        self.game.subsribe_for_event(self._mouse_events, pygame.MOUSEBUTTONUP)
+        self.game.subsribe_for_event(self._mouse_events, pygame.MOUSEMOTION)
 
-    def mouse_events(self, event: pygame.event.Event):
+    def subscribe_on_mouse_down(self, function: Union[MethodType, FunctionType]):
+        """
+        Subscribing function on every pygame.MOUSEBUTTONDOWN event when cursor is over collider of this entity.
+
+        Subscribed function will be called with button parameter like that: function(event.button)
+        """
+        self._on_mouse_down.append(function)
+
+    def subscribe_on_mouse_up(self, function: Union[MethodType, FunctionType]):
+        """
+        Subscribing function on every pygame.MOUSEBUTTONUP event when cursor is over collider of this entity.
+
+        Subscribed function will be called with button parameter like that: function(event.button)
+        """
+        self._on_mouse_up.append(function)
+
+    def subscribe_on_mouse_motion(self, function: Union[MethodType, FunctionType]):
+        """
+        Subscribing function on every pygame.MOUSEMOTION event when cursor is over collider of this entity.
+
+        Subscribed function will be called without parameters like that: function(event.button)
+        """
+        self._on_mouse_motion.append(function)
+
+    def _mouse_events(self, event: pygame.event.Event):
+        """
+        Runned on every MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION events.
+
+        Calling subscribed functions
+        """
         # Checking, is mouse pointer is over object
         mouse_world_position = self.game.from_screen_to_world_point(
             Vector2.from_tuple(pygame.mouse.get_pos()))
 
-        if not self.get_collider_rect().collidepoint(mouse_world_position.get_tuple()):
+        if not self.collider_rect.collidepoint(mouse_world_position.get_tuple()):
             return
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            [f(event.button) for f in self.on_mouse_down]
+            [f(event.button) for f in self._on_mouse_down]
         elif event.type == pygame.MOUSEBUTTONUP:
-            [f(event.button) for f in self.on_mouse_up]
+            [f(event.button) for f in self._on_mouse_up]
         elif event.type == pygame.MOUSEMOTION:
-            [f() for f in self.on_mouse_motion]
+            [f() for f in self._on_mouse_motion]

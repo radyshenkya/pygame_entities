@@ -1,137 +1,252 @@
-from types import FunctionType, MethodType
-from typing import Any, Dict, List, Tuple, Union
+"""
+Main Game class.
 
+Needs to be in every game builded with this pygame_entities library
+"""
+
+from types import FunctionType, MethodType
+from typing import Dict, List, Tuple, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    from pygame_entities.entities.entity import Entity
+    from pygame_entities.utils.drawable import BaseSprite
 from utils.math import Vector2
 
 import pygame
 
 
 class Game:
+    """
+    Main class of game.
+
+    This class is builded like singleton pattern, 
+
+    To create/get Game object use Game.get_instance method.
+
+    Do not use initialization.
+    """
+
     _instance = None
 
-    def __init__(self, screen_resolution: Tuple[int, int], frame_rate: float, void_color=(0, 0, 0)) -> None:
-        if not Game._instance is None:
-            raise Exception("Can not instantiate 2 Game objects.")
-
-        pygame.init()
-
-        self.void_color = void_color
-        self.frame_rate = frame_rate
-        self.screen_resolution = screen_resolution
-        self.screen = pygame.display.set_mode(self.screen_resolution)
-        self.clock = pygame.time.Clock()
-        self.running = True
-
-        self.sprites = pygame.sprite.LayeredUpdates()
-
-        self.delta_time = 1 / self.frame_rate
-
-        # Using dict, because with dict we can remove entities from game in O(1) time
-        self.entity_counter = 0
-        self.entities_for_delete = list()
-        self.enabled_entities = dict()
-        self.disabled_entities = dict()
-
-        # For camera
-        self.camera_follow_smooth_coefficient = 0.1
-        self.camera_position = Vector2(0, 0)
-        self.camera_follow_object = None
-
-        # for event system
-        self.subscribed_events: Dict[int, List[FunctionType]] = dict()
-
-    def get_instance(screen_resolution=(0, 0), frame_rate=60) -> "Game":
+    def get_instance(screen_resolution=(0, 0), frame_rate=60, void_color=(0, 0, 0)) -> "Game":
+        """
+        Get instance of Game class.
+        """
         if Game._instance is None:
-            Game._instance = Game(screen_resolution, frame_rate)
+            Game._instance = Game(screen_resolution, frame_rate, void_color)
 
         return Game._instance
 
-    def update_events(self):
+    def __init__(self, screen_resolution=(0, 0), frame_rate=60, void_color=(0, 0, 0)) -> None:
+        """
+        Do not use this.
+
+        Instead call Game.get_instance()
+        """
+        if not Game._instance is None:
+            raise Exception("Game class instantiated 2 times.")
+
+        pygame.init()
+
+        # Public fields
+        self.framerate: int = frame_rate
+        self.void_color: Tuple[int, int, int] = void_color
+        self.delta_time = 1 / self.framerate
+
+        self._screen_resolution: Tuple[int, int] = screen_resolution
+        self._screen = pygame.display.set_mode(self._screen_resolution)
+        self._clock = pygame.time.Clock()
+        self._running = True
+        self._sprites = pygame.sprite.LayeredUpdates()
+
+        # Using dict, because with dict we can remove entities from game in O(1) time
+        self._entity_counter = 0
+        self._entities_for_delete = list()
+        self._enabled_entities = dict()
+        self._disabled_entities = dict()
+
+        # For camera
+        self.camera_follow_smooth_coefficient = 0.1
+        self._camera_position = Vector2(0, 0)
+        self._camera_follow_object = None
+
+        # for event system
+        self._subscribed_events: Dict[int, List[FunctionType]] = dict()
+
+    @property
+    def screen(self) -> pygame.Surface:
+        """
+        Screen surface.
+
+        Can be changed to another pygame.Surface object.
+        """
+        return self._screen
+
+    @screen.setter
+    def screen(self, value: pygame.Surface):
+        self._screen = value
+        self._screen_resolution = value.get_size()
+
+    @property
+    def screen_resolution(self) -> Tuple[int, int]:
+        """
+        Resolution of screen surface
+        """
+        return self._screen_resolution
+
+    @property
+    def enabled_entities(self) -> List["Entity"]:
+        """
+        List of enabled entities
+        """
+        return self._enabled_entities.values()
+
+    @property
+    def disabled_entities(self) -> List["Entity"]:
+        """
+        List of disabled entities
+        """
+        return self._disabled_entities.values()
+
+    def camera_follow_entity(self, entity: Union["Entity", None]):
+        """
+        Sets camera to follow some entity
+        """
+        self._camera_follow_object = entity
+
+    def set_sprite_layer(self, sprite: "BaseSprite", layer: Union[int, float]):
+        """
+        Sets sprite layer.
+
+        Sprite need to be a BaseSprite class or childs of this class
+        """
+        self._sprites.change_layer(sprite, layer)
+
+    def _update_events(self):
+        """
+        Gets all pygame events and calling subscribers of each event type that returned.
+        """
         for event in pygame.event.get():
-            for func in self.subscribed_events.get(event.type, []):
+            for func in self._subscribed_events.get(event.type, []):
                 func(event)
 
     def subsribe_for_event(self, function: Union[MethodType, FunctionType], event_type: int):
-        subscribers = self.subscribed_events.get(event_type, [])
+        """
+        Subscribe a function for pygame event.
+
+        This function will be called when new event with type event_type will be received
+        """
+        subscribers = self._subscribed_events.get(event_type, [])
         subscribers.append(function)
-        self.subscribed_events[event_type] = subscribers
-
-    def set_framerate(self, new_framerate: int):
-        self.frame_rate = new_framerate
-
-    def set_screen(self, screen: pygame.Surface):
-        self.screen = screen
+        self._subscribed_events[event_type] = subscribers
 
     def run(self):
-        while self.running:
-            self.screen.fill(self.void_color)
+        """
+        Starts main loop of game.
 
-            self.update_events()
+        All configurations need to be created before calling this method
+        """
+        while self._running:
+            self._screen.fill(self.void_color)
 
-            self.update_entities()
+            # Updating systems
+            self._update_events()
+            self._update_entities()
+            self._sprites.update()
+            self._delete_entities()
+            self._camera_follow()
 
-            self.sprites.update()
-
-            self.delete_entities()
-
-            self.camera_follow()
-
-            self.sprites.draw(self.screen)
+            self._sprites.draw(self._screen)
             pygame.display.flip()
-            self.delta_time = self.clock.tick(self.frame_rate) / 1000
+            self.delta_time = self._clock.tick(self.framerate) / 1000
 
-    def update_entities(self):
-        for _, entity in self.enabled_entities.items():
-            entity.update(self.delta_time)
+    def _update_entities(self):
+        """
+        Updates all enabled entities
 
-    def camera_follow(self):
-        if not self.camera_follow_object is None:
-            self.camera_position = Vector2.lerp(
-                self.camera_position,
-                self.camera_follow_object.position
+        """
+        for entity in self.enabled_entities:
+            entity._update(self.delta_time)
+
+    def _camera_follow(self):
+        """
+        Moves camera towards entity for following that was set by method camera_follow_entity.
+
+        If follow entity is None, camera will remain in the same position
+        """
+        if not self._camera_follow_object is None:
+            self._camera_position = Vector2.lerp(
+                self._camera_position,
+                self._camera_follow_object.position
                 - Vector2(
-                    self.screen.get_width() /
-                    2, self.screen.get_height() / 2
+                    self._screen.get_width() /
+                    2, self._screen.get_height() / 2
                 ),
                 self.camera_follow_smooth_coefficient,
             )
 
-    def get_camera_center_position(self) -> Vector2:
-        return self.camera_position + Vector2(
-            self.screen.get_width() /
-            2, self.screen.get_height() / 2
+    @property
+    def camera_center_position(self) -> Vector2:
+        """
+        Returns center point of camera in world
+        """
+        return self._camera_position + Vector2(
+            self.screen_resolution[0] /
+            2, self.screen_resolution[1] / 2
         )
 
     def add_sprite(self, sprite: pygame.sprite.Sprite):
-        self.sprites.add(sprite)
+        """
+        Adding sprite to render
+        """
+        self._sprites.add(sprite)
 
     def add_entity(self, entity):
-        self.enabled_entities[self.entity_counter] = entity
-        entity.id = self.entity_counter
-        self.entity_counter += 1
+        """
+        Adding entity in game
+        """
+        self._enabled_entities[self._entity_counter] = entity
+        entity.id = self._entity_counter
+        self._entity_counter += 1
 
     def disable_entity(self, entity):
-        if entity.id in self.enabled_entities.keys():
-            self.disabled_entities[entity.id] = self.enabled_entities[entity.id]
-            del self.enabled_entities[entity.id]
+        """
+        Disabling entity.
+
+        After calling this function entity will not recieve update() method calls
+        """
+        if entity.id in self._enabled_entities.keys():
+            self._disabled_entities[entity.id] = self._enabled_entities[entity.id]
+            del self._enabled_entities[entity.id]
 
     def enable_entity(self, entity):
-        if entity.id in self.disabled_entities.keys():
-            self.enabled_entities[entity.id] = self.disabled_entities[entity.id]
-            del self.disabled_entities[entity.id]
+        """
+        Enabling entity.
+
+        After calling this function entity will recieve update() method calls
+        """
+        if entity.id in self._disabled_entities.keys():
+            self._enabled_entities[entity.id] = self._disabled_entities[entity.id]
+            del self._disabled_entities[entity.id]
 
     def delete_entity(self, entity_id: int):
-        if entity_id not in self.entities_for_delete:
-            self.entities_for_delete.append(entity_id)
+        """
+        Adds entity into pool for deleting
+        """
+        if entity_id not in self._entities_for_delete:
+            self._entities_for_delete.append(entity_id)
 
-    def delete_entities(self):
-        for entity_id in self.entities_for_delete:
-            del self.enabled_entities[entity_id]
+    # FIXME: Need to delete entities even from disabled entities.
+    def _delete_entities(self):
+        """
+        Deleting all entities that in delete pool
+        """
+        for entity_id in self._entities_for_delete:
+            del self._enabled_entities[entity_id]
 
-        self.entities_for_delete = list()
+        self._entities_for_delete = list()
 
     def from_screen_to_world_point(self, on_screen_point: Vector2) -> Vector2:
-        return on_screen_point + self.camera_position
+        return on_screen_point + self._camera_position
 
     def from_world_point_to_screen(self, world_point: Vector2) -> Vector2:
-        return world_point - self.camera_position
+        return world_point - self._camera_position
