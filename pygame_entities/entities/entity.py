@@ -57,7 +57,7 @@ class Entity:
         for method in self._on_update:
             method(delta_time)
 
-    def _destroy(self):
+    def destroy(self):
         """
         This method will be called on destroy of this entity
         """
