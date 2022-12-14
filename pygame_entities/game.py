@@ -235,13 +235,15 @@ class Game:
         if entity_id not in self._entities_for_delete:
             self._entities_for_delete.append(entity_id)
 
-    # FIXME: Need to delete entities even from disabled entities.
     def _delete_entities(self):
         """
         Deleting all entities that in delete pool
         """
         for entity_id in self._entities_for_delete:
-            del self._enabled_entities[entity_id]
+            if entity_id in self._enabled_entities.keys():
+                del self._enabled_entities[entity_id]
+            else:
+                del self._disabled_entities[entity_id]
 
         self._entities_for_delete = list()
 
