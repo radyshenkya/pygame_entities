@@ -7,9 +7,9 @@ Needs to be in every game builded with this pygame_entities library
 from types import FunctionType, MethodType
 from typing import Dict, List, Tuple, Union, TYPE_CHECKING
 if TYPE_CHECKING:
-    from pygame_entities.entities.entity import Entity
-    from pygame_entities.utils.drawable import BaseSprite
-from utils.math import Vector2
+    from .entities.entity import Entity
+    from .utils.drawable import BaseSprite
+from .utils.math import Vector2
 
 import pygame
 

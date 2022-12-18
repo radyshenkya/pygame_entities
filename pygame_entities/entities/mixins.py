@@ -3,11 +3,11 @@ Mixins for entities (Based on Entity class)
 """
 from types import FunctionType, MethodType
 from typing import Union
-from utils.drawable import BaseSprite
-from utils.math import Vector2
-from utils.collision_side import check_side, UP, DOWN, RIGHT, LEFT
+from ..utils.drawable import BaseSprite
+from ..utils.math import Vector2
+from ..utils.collision_side import check_side, UP, DOWN, RIGHT, LEFT
 
-from entities.entity import Entity
+from .entity import Entity
 
 import pygame
 

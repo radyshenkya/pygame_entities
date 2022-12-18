@@ -97,7 +97,7 @@ def lerp(a: float, b: float, t: float) -> float:
 def clamp(x: Union[float, int], minimum: Union[float, int], maximum: Union[float, int]) -> Union[float, int]:
     """
     Clamping x between minimum and maximum.
-    
+
     Using python functions max() and min()
     """
     return min(max(x, minimum), maximum)

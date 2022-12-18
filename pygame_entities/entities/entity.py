@@ -4,8 +4,8 @@ Base entity class.
 
 from types import FunctionType, MethodType
 from typing import Union
-from utils.math import Vector2
-from game import Game
+from ..utils.math import Vector2
+from ..game import Game
 
 
 class Entity:
