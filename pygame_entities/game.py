@@ -55,7 +55,7 @@ class Game:
         self._screen_resolution: Tuple[int, int] = screen_resolution
         self._screen = pygame.display.set_mode(self._screen_resolution)
         self._clock = pygame.time.Clock()
-        self._running = True
+        self.running = True
         self._sprites = pygame.sprite.LayeredUpdates()
 
         # Using dict, because with dict we can remove entities from game in O(1) time
