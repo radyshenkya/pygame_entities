@@ -145,7 +145,7 @@ class Game:
 
         All configurations need to be created before calling this method
         """
-        while self._running:
+        while self.running:
             self._screen.fill(self.void_color)
 
             # Updating systems
