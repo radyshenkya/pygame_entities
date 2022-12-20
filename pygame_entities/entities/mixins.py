@@ -2,10 +2,11 @@
 Mixins for entities (Based on Entity class)
 """
 from types import FunctionType, MethodType
-from typing import Union
+from typing import Union, List
 from ..utils.drawable import BaseSprite
 from ..utils.math import Vector2
 from ..utils.collision_side import check_side, UP, DOWN, RIGHT, LEFT
+from ..game import Game
 
 from .entity import Entity
 
@@ -117,21 +118,16 @@ class CollisionMixin(Entity):
         if not self.is_check_collision:
             return
 
-        for entity in self.game.enabled_entities:
-            if not isinstance(entity, CollisionMixin) or entity.id == self.id:
+        for entity in CollisionMixin.cast_rect(self.collider_rect):
+            if entity.id == self.id:
                 continue
 
-            self_collider_rect = self.collider_rect
-
-            other_collider_rect = entity.collider_rect
-
-            if self_collider_rect.colliderect(other_collider_rect):
-                if entity.is_trigger or self.is_trigger:
-                    self._on_trigger(entity, self_collider_rect,
-                                     other_collider_rect)
-                    continue
-                self._on_collide(entity, self_collider_rect,
-                                 other_collider_rect)
+            if entity.is_trigger or self.is_trigger:
+                self._on_trigger(entity, self.collider_rect,
+                                 entity.collider_rect)
+                continue
+            self._on_collide(entity, self.collider_rect,
+                             entity.collider_rect)
 
     @property
     def collider_rect(self) -> pygame.Rect:
@@ -142,6 +138,21 @@ class CollisionMixin(Entity):
             (self.position - self.collider_size / 2).get_integer_tuple(),
             self.collider_size.get_integer_tuple(),
         )
+
+    @staticmethod
+    def cast_rect(rect: pygame.Rect) -> List["CollisionMixin"]:
+        """
+        Casts a rect and returns all collided entities with CollisionMixin
+        """
+        collided_entities = list()
+        for entity in Game.get_instance().enabled_entities:
+            if not isinstance(entity, CollisionMixin):
+                continue
+
+            if rect.colliderect(entity.collider_rect):
+                collided_entities.append(entity)
+
+        return collided_entities
 
 
 class VelocityMixin(Entity):
