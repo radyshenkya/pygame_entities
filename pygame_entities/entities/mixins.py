@@ -50,6 +50,10 @@ class SpriteMixin(Entity):
         """
         self.sprite.kill()
 
+# TODO: Add function to cast with image polygons
+# TODO: Add not rectangle collisions
+# TODO: Separate CollisionMixin entities from all enabled_entities, to iterate on collision check only on entities with collision mixin
+
 
 class CollisionMixin(Entity):
     """
