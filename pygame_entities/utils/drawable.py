@@ -7,7 +7,6 @@ from ..game import Game
 from ..utils.math import Vector2
 
 import pygame
-import pygame.math
 
 
 class BaseSprite(pygame.sprite.Sprite):
