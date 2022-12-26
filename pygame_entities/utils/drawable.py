@@ -229,7 +229,8 @@ class AnimatedSprite(BaseSprite):
     @frames.setter
     def frames(self, new_value: List[pygame.Surface]):
         self._frames = new_value
-        self._frames_count = 0
+        self._frames_count = len(new_value)
+        self._current_frame_index = 0
 
     def update(self) -> None:
         super().update()
