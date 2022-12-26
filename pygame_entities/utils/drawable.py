@@ -222,9 +222,14 @@ class AnimatedSprite(BaseSprite):
         self.frame_change_delay = frame_change_delay
         self._timer = 0.0
 
-    def set_frames(self, frames: List[pygame.Surface]):
-        self._frames = frames
-        self._current_frame_index = 0
+    @property
+    def frames(self) -> List[pygame.Surface]:
+        return self._frames
+
+    @frames.setter
+    def frames(self, new_value: List[pygame.Surface]):
+        self._frames = new_value
+        self._frames_count = 0
 
     def update(self) -> None:
         super().update()
